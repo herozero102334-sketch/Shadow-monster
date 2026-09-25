@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>SHADOW MONSTER - 10 LEVELS</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;touch-action:none;user-select:none}
+body{background:#000;overflow:hidden;font-family:'Segoe UI',sans-serif}
+#cv{width:100vw;height:100vh;display:block}
+#top{position:absolute;top:0;left:0;width:100%;height:80px;background:linear-gradient(#000,transparent);display:flex;justify-content:space-between;padding:10px 15px;z-index:10}
+.hpbar{width:38vw;max-width:200px;height:18px;background:#333;border:2px solid #fff;border-radius:10px;overflow:hidden;position:relative}
+#phpIn{width:100%;height:100%;background:linear-gradient(90deg,#0f0,#0a0);transition:width 0.2s}
+#ehpIn{width:100%;height:100%;background:linear-gradient(90deg,#f00,#a00);transition:width 0.2s}
+.name{color:#fff;font-weight:bold;font-size:12px;margin-top:3px;text-shadow:0 0 5px #000}
+#center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(10,10,10,0.95);border:2px solid #0f0;border-radius:15px;padding:20px;width:94%;max-width:400px;text-align:center;z-index:30;color:#fff}
+.btn{padding:12px 22px;background:linear-gradient(#0f0,#090);border:none;color:#000;font-weight:bold;border-radius:8px;margin:5px;font-size:14px}
+.btn2{padding:10px 18px;background:#222;border:1px solid #0f0;color:#0f0;border-radius:8px;margin:5px}
+#controls{position:absolute;bottom:0;left:0;width:100%;height:150px;z-index:20;display:flex;justify-content:space-between;align-items:flex-end;padding:10px}
+.c-left{display:flex;gap:10px}
+.c-right{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;max-width:200px}
+.cbtn{width:62px;height:62px;border-radius:50%;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:18px;color:#fff;background:rgba(0,0,0,0.5);backdrop-filter:blur(5px)}
+.cbtn:active{transform:scale(0.9);background:#0f0;color:#000}
+#super{width:70px;height:70px;background:radial-gradient(#ff0,#f80);color:#000;border-color:yellow;box-shadow:0 0 15px yellow}
+#coinBar{position:absolute;top:85px;left:15px;color:#ff0;font-weight:bold;z-index:10;background:rgba(0,0,0,0.6);padding:5px 12px;border-radius:20px;border:1px solid #ff0}
+#lvlBar{position:absolute;top:85px;right:15px;color:#0ff;font-weight:bold;z-index:10;background:rgba(0,0,0,0.6);padding:5px 12px;border-radius:20px;border:1px solid #0ff}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="top">
+<div><div class="hpbar"><div id="phpIn"></div></div><div class="name" id="pname">HERO - HP 100</div></div>
+<div><div class="hpbar"><div id="ehpIn"></div></div><div class="name" id="ename" style="text-align:right">GABRO CHIKAM DIN</div></div>
+</div>
+<div id="coinBar">💰 <span id="coinTxt">0</span> Coin</div>
+<div id="lvlBar">LEVEL <span id="lvlTxt">1</span>/10</div>
+
+<div id="center">
+<h1 style="color:#0f0;letter-spacing:4px">SHADOW MONSTER</h1>
+<h3 style="color:#ff0;margin:5px 0">10 LEVEL FIGHT</h3>
+<div style="text-align:left;font-size:12px;background:#111;padding:10px;border-radius:8px;margin:10px 0;line-height:18px">
+<b style="color:#0f0">VILLAINS:</b><br>
+1. GABRO CHIKAM DIN - HP 150<br>
+2. NAYEEM - HP 200<br>
+3. HAMID - HP 250<br>
+4. <b style="color:red">SASA - HP 300 [MAIN]</b><br>
+5. HASSAN - HP 350<br>
+6. SKONA - HP 400<br>
+7. AHMID - HP 450<br>
+8. MAHMOOD - HP 500<br>
+9. GOJO SATHORO - HP 600<br>
+10. HADI - FINAL BOSS HP 800
+</div>
+<div style="display:flex;justify-content:center;flex-wrap:wrap">
+<button class="btn" onclick="startLevel()">⚔️ START FIGHT</button>
+<button class="btn2" onclick="openShop()">🛒 SHOP</button>
+<button class="btn2" onclick="dailyClaim()">🎁 DAILY</button>
+<button class="btn2" onclick="openUpgrade()">⬆️ UPGRADE</button>
+</div>
+<p style="font-size:10px;color:#777;margin-top:10px">60FPS | Sound ON | Vibration ON | Combo System | Shield Block | Super Shoot</p>
+</div>
+
+<div id="controls">
+<div class="c-left">
+<div class="cbtn" id="leftBtn">◀</div>
+<div class="cbtn" id="rightBtn">▶</div>
+</div>
+<div class="c-right">
+<div class="cbtn" id="punchBtn">👊</div>
+<div class="cbtn" id="kickBtn">🦶</div>
+<div class="cbtn" id="jumpBtn">⬆️</div>
+<div class="cbtn" id="super">💥</div>
+</div>
+</div>
+
+<script>
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d');
+const phpIn=document.getElementById('phpIn'),ehpIn=document.getElementById('ehpIn'),pname=document.getElementById('pname'),ename=document.getElementById('ename'),coinTxt=document.getElementById('coinTxt'),lvlTxt=document.getElementById('lvlTxt'),center=document.getElementById('center');
+let W,H,player,enemy,keys={},particles=[],coins,level,gameRun,combo,lastHit,achievements;
+const villains=["GABRO CHIKAM DIN","NAYEEM","HAMID","SASA","HASSAN","SKONA","AHMID","MAHMOOD","GOJO SATHORO","HADI"];
+let shop={katana:false,shield:false,atk:0,hp:0,speed:0};
+let ac;
+function snd(f,t,d,v=0.4){try{if(!ac)ac=new(window.AudioContext||window.webkitAudioContext)();let o=ac.createOscillator(),g=ac.createGain();o.frequency.value=f;o.type=t;g.gain.value=v;o.connect(g);g.connect(ac.destination);g.gain.exponentialRampToValueAtTime(0.01,ac.currentTime+d);o.start();o.stop(ac.currentTime+d);}catch(e){}}
+function vib(p){if(navigator.vibrate)navigator.vibrate(p);}
+function resize(){W=cv.width=innerWidth;H=cv.height=innerHeight}addEventListener('resize',resize);resize();
+function load(){coins=parseInt(localStorage.getItem('sm_coin')||'0');level=parseInt(localStorage.getItem('sm_lvl')||'1');let s=localStorage.getItem('sm_shop');if(s)shop=JSON.parse(s);coinTxt.textContent=coins;lvlTxt.textContent=level;}load();
+function save(){localStorage.setItem('sm_coin',coins);localStorage.setItem('sm_lvl',level);localStorage.setItem('sm_shop',JSON.stringify(shop));}
+
+function openShop(){
+center.innerHTML=`<h2 style="color:#ff0">SHOP - HERO</h2>
+<div style="text-align:left;margin:15px 0">
+<div style="background:#222;padding:10px;border-radius:8px;margin:5px 0;display:flex;justify-content:space-between"><span>🗡️ Katana (+25 ATK) - 200 Coin</span><button class="btn2" onclick="buy('katana')">BUY</button></div>
+<div style="background:#222;padding:10px;border-radius:8px;margin:5px 0;display:flex;justify-content:space-between"><span>🛡️ Shield (-30% DMG) - 250 Coin</span><button class="btn2" onclick="buy('shield')">BUY</button></div>
+<p style="font-size:11px;color:#aaa">Bought: ${shop.katana?'Katana ✅':''} ${shop.shield?'Shield ✅':''}</p>
+</div><button class="btn" onclick="showMenu()">BACK</button>`;
+center.style.display='block';
+}
+function buy(it){
+ if(it=='katana'&&coins>=200&&!shop.katana){coins-=200;shop.katana=true;snd(800,'sine',0.3);save();coinTxt.textContent=coins;openShop();}
+ else if(it=='shield'&&coins>=250&&!shop.shield){coins-=250;shop.shield=true;snd(800,'sine',0.3);save();coinTxt.textContent=coins;openShop();}
+ else alert('Coin kam hai ya already bought!');
+}
+function openUpgrade(){
+center.innerHTML=`<h2 style="color:#0ff">UPGRADE HERO - 100 Coin each</h2>
+<div style="text-align:left;margin:15px 0">
+<div style="background:#222;padding:8px;border-radius:8px;margin:5px 0">⚔️ Attack LVL ${shop.atk} <button class="btn2" onclick="up('atk')">UPGRADE</button></div>
+<div style="background:#222;padding:8px;border-radius:8px;margin:5px 0">❤️ HP LVL ${shop.hp} <button class="btn2" onclick="up('hp')">UPGRADE</button></div>
+<div style="background:#222;padding:8px;border-radius:8px;margin:5px 0">⚡ Speed LVL ${shop.speed} <button class="btn2" onclick="up('speed')">UPGRADE</button></div>
+</div><button class="btn" onclick="showMenu()">BACK</button>`;
+center.style.display='block';
+}
+function up(t){if(coins>=100){coins-=100;shop[t]++;save();coinTxt.textContent=coins;snd(600,'square',0.2);openUpgrade();}else alert('100 Coin chahiye!');}
+function dailyClaim(){
+ let last=localStorage.getItem('sm_daily');let today=new Date().toDateString();
+ if(last==today){alert('Aaj ka claim ho chuka hai! Kal aana');return}
+ coins+=150;localStorage.setItem('sm_daily',today);save();coinTxt.textContent=coins;snd(1000,'sine',0.5);alert('🎁 150 Coin Daily Claim Success!');
+}
+function showMenu(){
+center.innerHTML=`<h1 style="color:#0f0;letter-spacing:4px">SHADOW MONSTER</h1>
+<h3 style="color:#ff0">LEVEL ${level} - VS ${villains[level-1]}</h3>
+<p style="font-size:12px;color:#aaa;margin:10px 0">Hero HP: ${100+shop.hp*15} | ATK: ${15+shop.atk*5}${shop.katana?' +25':''} | Shield: ${shop.shield?'ON':'OFF'}</p>
+<div style="display:flex;justify-content:center;flex-wrap:wrap">
+<button class="btn" onclick="startLevel()">⚔️ FIGHT NOW</button>
+<button class="btn2" onclick="openShop()">🛒 SHOP</button>
+<button class="btn2" onclick="dailyClaim()">🎁 DAILY</button>
+<button class="btn2" onclick="openUpgrade()">⬆️ UPGRADE</button>
+</div>`;
+center.style.display='block';
+}
+
+function startLevel(){
+ if(level>10){center.innerHTML=`<h1 style="color:#0f0">YOU ARE LEGEND HADI!</h1><p>Saare 10 villains ko hara diya!</p><button class="btn" onclick="level=1;save();showMenu()">REPLAY</button>`;return}
+ let baseHP=100+level*50; if(level==10)baseHP=800; if(level==9)baseHP=600;
+ player={x:100,y:H-120,w:40,h:80,hp:100+shop.hp*15,maxHp:100+shop.hp*15,atk:15+shop.atk*5+(shop.katana?25:0),vx:0,vy:0,onGround:true,dir:1,state:'idle',hitCD:0,block:false,super:0};
+ enemy={x:W-150,y:H-120,w:40,h:80,hp:baseHP,maxHp:baseHP,atk:10+level*3,vx:0,vy:0,onGround:true,dir:-1,state:'idle',hitCD:0,name:villains[level-1]};
+ particles=[];combo=0;lastHit=0;gameRun=true;center.style.display='none';ename.textContent=enemy.name+' - HP '+enemy.maxHp;pname.textContent='HERO - HP '+player.maxHp;lvlTxt.textContent=level;coinTxt.textContent=coins;
+ loop();
+}
+function addParticle(x,y,c,n=8){for(let i=0;i<n;i++)particles.push({x,y,vx:(Math.random()-0.5)*8,vy:(Math.random()-0.5)*8-2,life:20,c});}
+
+function update(){
+ if(!gameRun)return;
+ // gravity
+ player.vy+=0.8;player.y+=player.vy;if(player.y>=H-120){player.y=H-120;player.vy=0;player.onGround=true}else player.onGround=false;
+ enemy.vy+=0.8;enemy.y+=enemy.vy;if(enemy.y>=H-120){enemy.y=H-120;enemy.vy=0;enemy.onGround=true}else enemy.onGround=false;
+ // player move
+ let speed=3+shop.speed*0.5;
+ if(keys['a']||keys['left']) {player.x-=speed;player.dir=-1}
+ if(keys['d']||keys['right']) {player.x+=speed;player.dir=1}
+ player.x=Math.max(0,Math.min(W-50,player.x));
+ enemy.x=Math.max(0,Math.min(W-50,enemy.x));
+ // enemy AI
+ let dist=enemy.x-player.x;
+ if(Math.abs(dist)>60){enemy.x+=Math.sign(-dist)*(1.2+level*0.15);enemy.dir=dist>0?-1:1}
+ else if(enemy.hitCD<=0&&Math.random()<0.04){enemyAttack()}
+ if(player.hitCD>0)player.hitCD--; if(enemy.hitCD>0)enemy.hitCD--;
+ // particles
+ particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.2;p.life--;});particles=particles.filter(p=>p.life>0);
+ // check win
+ if(player.hp<=0){gameOver(false);return}
+ if(enemy.hp<=0){gameOver(true);return}
+ phpIn.style.width=(player.hp/player.maxHp*100)+'%'; ehpIn.style.width=(enemy.hp/enemy.maxHp*100)+'%';
+}
+function playerAttack(type){
+ if(player.hitCD>0||!gameRun)return;
+ let dmg=player.atk; if(type=='kick')dmg*=1.3; if(type=='super'){if(player.super<100){msgPop('SUPER NEED 100%');return} dmg*=2.5; player.super=0; addParticle(player.x+20,player.y+20,'#ff0',20); vib([100,50,100]); snd(200,'sawtooth',0.6,0.8);}
+ let dist=Math.abs(player.x-enemy.x);
+ if(dist<80){
+  let finalDmg=dmg+Math.random()*5;
+  enemy.hp-=finalDmg; addParticle(enemy.x,enemy.y+30,'#f00',12); snd(150,'square',0.15); vib(60);
+  if(Date.now()-lastHit<1500)combo++; else combo=1; lastHit=Date.now();
+  if(combo>1)msgPop(combo+'X COMBO!');
+  player.super=Math.min(100,player.super+12);
+  // slow mo on kill
+  if(enemy.hp<=0){slowMo()}
+ }else{ snd(400,'sine',0.05,0.2);}
+ player.hitCD= type=='kick'?20:12;
+}
+function enemyAttack(){
+ if(Math.abs(enemy.x-player.x)>80)return;
+ let dmg=enemy.atk; if(player.block&&shop.shield)dmg*=0.7; if(player.block)dmg*=0.5;
+ player.hp-=dmg; addParticle(player.x,player.y+30,'#0ff',10); snd(120,'sawtooth',0.2); vib(80);
+ enemy.hitCD=40;
+}
+function msgPop(t){
+ let el=document.createElement('div');el.textContent=t;el.style.position='absolute';el.style.left='50%';el.style.top='40%';el.style.transform='translate(-50%,-50%)';el.style.color='#ff0';el.style.fontWeight='bold';el.style.fontSize='24px';el.style.zIndex='25';el.style.textShadow='0 0 10px #000';document.body.appendChild(el);setTimeout(()=>el.remove(),700);
+}
+function slowMo(){let o=0;let id=setInterval(()=>{o+=0.1;if(o>1)clearInterval(id)},16)}
+function gameOver(win){
+ gameRun=false;
+ if(win){
+  coins+=100; if(level==10)coins+=500;
+  if(level<10)level++; save(); coinTxt.textContent=coins; lvlTxt.textContent=level;
+  center.innerHTML=`<h1 style="color:#0f0">LEVEL WIN!</h1><p style="margin:10px 0">${enemy.name} ko hara diya!</p><p style="color:#ff0">+100 Coin! Total: ${coins}</p><p style="font-size:11px;color:#aaa">Combo: ${combo}x | Super Used: ${player.super==0?'Yes':''}</p><button class="btn" onclick="startLevel()">NEXT LEVEL ➡️</button><button class="btn2" onclick="showMenu()">MENU</button>`;
+  snd(600,'sine',0.2);snd(800,'sine',0.4);setTimeout(()=>snd(1000,'sine',0.5),200); vib([50,50,100]);
+ }else{
+  center.innerHTML=`<h1 style="color:#f00">YOU LOSE!</h1><p>${enemy.name} ne hara diya</p><button class="btn" onclick="startLevel()">RETRY</button><button class="btn2" onclick="showMenu()">MENU</button>`;
+  snd(100,'sawtooth',0.8,0.8);
+ }
+ center.style.display='block';
+}
+
+function draw(){
+ // GREEN SUNSET BACKGROUND
+ let grd=ctx.createLinearGradient(0,0,0,H);
+ grd.addColorStop(0,'#001a00');grd.addColorStop(0.3,'#0a3d0a');grd.addColorStop(0.6,'#2d5a27');grd.addColorStop(0.8,'#ff8c42');grd.addColorStop(1,'#ff3c00');
+ ctx.fillStyle=grd;ctx.fillRect(0,0,W,H);
+ // sun
+ ctx.fillStyle='rgba(255,100,0,0.8)';ctx.beginPath();ctx.arc(W*0.7, H*0.3, 80,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='rgba(255,200,0,0.4)';ctx.beginPath();ctx.arc(W*0.7, H*0.3, 120,0,Math.PI*2);ctx.fill();
+ // land shadow
+ ctx.fillStyle='#0a0a0a';ctx.fillRect(0,H-40,W,40);
+ ctx.fillStyle='#111';ctx.fillRect(0,H-45,W,10);
+ // shadow figures
+ function drawShadow(p,isHero){
+  ctx.save();ctx.translate(p.x+20,p.y+40);
+  ctx.fillStyle=isHero?'#000':'#1a0000';
+  ctx.shadowBlur=isHero?15:20;ctx.shadowColor=isHero?'#0f0':'#f00';
+  // body shadow
+  ctx.fillRect(-8,-40,16,40);
+  // head
+  ctx.beginPath();ctx.arc(0,-50,14,0,Math.PI*2);ctx.fill();
+  // katana if hero has
+  if(isHero&&shop.katana){
+   ctx.strokeStyle='#aaa';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(10,-20);ctx.lineTo(30,-30+Math.sin(Date.now()/100)*5);ctx.stroke();
+  }
+  // shield
+  if(isHero&&shop.shield&&p.block){
+   ctx.fillStyle='rgba(0,255,255,0.5)';ctx.beginPath();ctx.arc(15,-20,18,0,Math.PI*2);ctx.fill();
+  }
+  ctx.restore();
+  // hp text above
+  ctx.fillStyle='#fff';ctx.font='10px monospace';ctx.fillText(isHero?'HERO':p.name, p.x-10, p.y-60);
+ }
+ drawShadow(player,true);drawShadow(enemy,false);
+ // particles
+ particles.forEach(p=>{ctx.fillStyle=p.c;ctx.globalAlpha=p.life/20;ctx.fillRect(p.x,p.y,4,4);});ctx.globalAlpha=1;
+ // super bar
+ ctx.fillStyle='#333';ctx.fillRect(20,H-70,100,10);ctx.fillStyle='#ff0';ctx.fillRect(20,H-70,player?player.super:0,10);
+ ctx.fillStyle='#fff';ctx.font='10px monospace';ctx.fillText('SUPER '+ (player?Math.floor(player.super):0)+'%',22,H-62);
+ // combo
+ if(combo>1){ctx.fillStyle='#ff0';ctx.font='bold 20px monospace';ctx.fillText(combo+'X COMBO!',W/2-60, H/2-80)}
+}
+
+function loop(){update();draw();if(gameRun)requestAnimationFrame(loop)}
+
+// Controls
+const bind=(id,fn)=>{let el=document.getElementById(id);el.addEventListener('touchstart',e=>{fn();e.preventDefault()},{passive:false});el.addEventListener('mousedown',fn);};
+bind('punchBtn',()=>playerAttack('punch'));
+bind('kickBtn',()=>playerAttack('kick'));
+bind('jumpBtn',()=>{if(player&&player.onGround){player.vy=-14;player.onGround=false;snd(300,'sine',0.15)}});
+bind('super',()=>playerAttack('super'));
+bind('leftBtn',()=>{keys['left']=true});bind('rightBtn',()=>{keys['right']=true});
+addEventListener('touchend',()=>{keys['left']=false;keys['right']=false});
+addEventListener('keydown',e=>{
+ if(e.key=='a')keys['a']=true;if(e.key=='d')keys['d']=true;
+ if(e.key==' ')playerAttack('punch');if(e.key=='k')playerAttack('kick');
+ if(e.key=='w'&&player&&player.onGround){player.vy=-14;player.onGround=false}
+ if(e.key=='s'){if(player)player.block=true}
+ if(e.key=='q')playerAttack('super');
+});
+addEventListener('keyup',e=>{if(e.key=='a')keys['a']=false;if(e.key=='d')keys['d']=false;if(e.key=='s'&&player)player.block=false;});
+
+showMenu();resize();(function anim(){draw();requestAnimationFrame(anim)})();
+</script>
+</body>
+</html>
